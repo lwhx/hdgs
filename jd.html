@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Downloader</title>
+</head>
+<body>
+    <h1>京东图库图片下载</h1>
+    <!-- 大的输入框用于粘贴内容 -->
+    <textarea id="contentInput" rows="10" cols="80" placeholder="Paste your HTML content here..."></textarea>
+    <!-- 添加一个按钮用于读取内容并下载图片 -->
+    <button id="downloadImagesButton">下载图片</button>
+    <!-- 虚拟文件夹列表 -->
+    <h2>下载文件夹</h2>
+    <ul id="downloadFolder"></ul>
+    
+    <script>
+        let downloadDelay = 1000; // 设置下载延时为1000毫秒
+
+        // 点击下载图片按钮时，读取输入框内容并下载图片
+        document.getElementById('downloadImagesButton').addEventListener('click', function() {
+            const content = document.getElementById('contentInput').value;
+            const imageRegex = /<img src="([^"]+)" alt="([^"]+)" \/>/g;
+            let match;
+
+            while ((match = imageRegex.exec(content)) !== null) {
+                let url = match[1];
+                const name = match[2];
+
+                // 检查URL是否以http或https开头
+                if (!url.startsWith('http:') && !url.startsWith('https:')) {
+                    url = 'https:' + url;
+                }
+
+                // 延时下载图片
+                setTimeout(() => downloadImage(url, name), downloadDelay);
+                downloadDelay += 500; // 增加延时
+            }
+
+            if (match === null) {
+                alert('没有找到图片或所有图片已下载。');
+            }
+        });
+
+        function downloadImage(url, name) {
+            fetch(url)
+              .then(response => response.blob())
+              .then(blob => {
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(blobUrl); // 释放URL对象
+
+                    // 将下载的图片链接添加到虚拟文件夹列表中
+                    const listItem = document.createElement('li');
+                    listItem.textContent = name;
+                    document.getElementById('downloadFolder').appendChild(listItem);
+                })
+              .catch(error => {
+                    console.error('下载图片时出错:', error);
+                });
+        }
+    </script>
+</body>
+</html>
