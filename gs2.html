@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>商品活动价格公式表</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+        }
+        .container {
+            width: 80%;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .title {
+            text-align: center;
+            padding: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 10px 10px 0 0;
+            margin: -20px -20px 20px -20px;
+        }
+        .discount-container, .result-container, .final-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            height: 13.33vh;
+        }
+        .discount-item, .result-item, .final-item {
+            flex: 1;
+            margin: 0 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .discount-item button {
+            margin-top: 10px;
+            padding: 10px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        span {
+            display: block;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .highlight {
+            font-weight: bold;
+            color: red;
+        }
+        /* 新增百分比样式 */
+        .percent-sign::after {
+            content: "%";
+            position: relative;
+            left: -25px;
+            color: #666;
+        }
+    </style>
+    <script>
+        function calculateDiscount() {
+            var price = parseFloat(document.getElementById("price").value);
+            
+            // 官方立减计算
+            var officialDiscountRate = parseFloat(document.getElementById("officialDiscount").value) / 100;
+            var officialTotalDiscount = price * officialDiscountRate;
+
+            // 店铺满减计算
+            var storeStep = parseFloat(document.getElementById("storeStep").value);
+            var storeDiscount = parseFloat(document.getElementById("storeDiscount").value);
+            var storeTimes =  Math.min(Math.floor(price / storeStep), 10);
+            var storeTotalDiscount = storeTimes * storeDiscount;
+
+            var totalDiscount = officialTotalDiscount + storeTotalDiscount;
+            var finalPrice = price - totalDiscount;
+            var discountRate = (finalPrice / price).toFixed(2);
+
+            // 逆向计算逻辑
+            var finalPriceInput = parseFloat(document.getElementById("finalPriceInput").value);
+            if (isNaN(finalPriceInput)) {
+                document.getElementById("requiredCouponAmount").innerText = "0";
+            } else if (finalPriceInput < finalPrice) {
+                var requiredCouponAmount = price - officialTotalDiscount - finalPriceInput;
+                document.getElementById("requiredCouponAmount").innerText = "需优惠金额: " + requiredCouponAmount.toFixed(2);
+            } else {
+                var diffAmount = finalPriceInput - finalPrice;
+                document.getElementById("requiredCouponAmount").innerText = "补差价: " + diffAmount.toFixed(2);
+            }
+
+            // 更新显示结果
+            document.getElementById("officialTotalDiscount").innerText = officialTotalDiscount.toFixed(2);
+            document.getElementById("storeTotalDiscount").innerText = storeTotalDiscount.toFixed(2);
+            document.getElementById("totalDiscount").value = totalDiscount.toFixed(2);
+            document.getElementById("finalPrice").value = finalPrice.toFixed(2);
+            document.getElementById("discountRate").value = discountRate;
+        }
+
+        function resetFinalPrice() {
+            document.getElementById("finalPriceInput").value = "";
+            document.getElementById("requiredCouponAmount").innerText = "0";
+            calculateDiscount();
+        }
+
+        function saveConfig() {
+            localStorage.setItem("officialDiscount", document.getElementById("officialDiscount").value);
+            localStorage.setItem("storeStep", document.getElementById("storeStep").value);
+            localStorage.setItem("storeDiscount", document.getElementById("storeDiscount").value);
+            alert("配置已保存！");
+        }
+
+        function loadConfig() {
+            document.getElementById("officialDiscount").value = localStorage.getItem("officialDiscount") || "15";
+            document.getElementById("storeStep").value = localStorage.getItem("storeStep") || "1000";
+            document.getElementById("storeDiscount").value = localStorage.getItem("storeDiscount") || "100";
+            calculateDiscount();
+        }
+        window.onload = loadConfig;
+    </script>
+</head>
+<body>
+<div class="container">
+    <h1 class="title">商品活动价格公式表</h1>
+    
+    <!-- 修改后的优惠条件容器 -->
+    <div class="discount-container">
+        <div class="discount-item">
+            <label>官方立减比例：</label>
+            <div class="percent-sign">
+                <input type="number" id="officialDiscount" value="15" 
+                       min="0" max="100" 
+                       oninput="calculateDiscount()">
+            </div>
+        </div>
+        <div class="discount-item">
+            <label for="storeStep">店铺满减条件：</label>
+            <input type="number" id="storeStep" value="1000" oninput="calculateDiscount()">
+        </div>
+        <div class="discount-item">
+            <label for="storeDiscount">店铺满减金额：</label>
+            <input type="number" id="storeDiscount" value="100" oninput="calculateDiscount()">
+        </div>
+        <div class="discount-item">
+            <button onclick="saveConfig()">保存配置</button>
+        </div>
+    </div>
+
+    <!-- 结果展示容器保持不变 -->
+    <div class="result-container">
+        <div class="result-item">
+            <label for="price" class="highlight">商品价格：</label>
+            <input type="number" id="price" placeholder="请输入商品价格" oninput="resetFinalPrice()" class="highlight">
+        </div>
+        <div class="result-item">
+            <label>官方立减总额：</label>
+            <span id="officialTotalDiscount">0</span>
+        </div>
+        <div class="result-item">
+            <label>店铺满减总额：</label>
+            <span id="storeTotalDiscount">0</span>
+        </div>
+        <div class="result-item">
+            <label for="totalDiscount">总优惠金额：</label>
+            <input type="number" id="totalDiscount" readonly>
+        </div>
+        <div class="result-item">
+            <label for="finalPrice" class="highlight">实时到手价：</label>
+            <input type="text" id="finalPrice" readonly class="highlight">
+        </div>
+        <div class="result-item">
+            <label for="discountRate">折扣率：</label>
+            <input type="text" id="discountRate" readonly>
+        </div>
+    </div>
+
+    <!-- 目标价格容器 -->
+    <div class="final-container">
+        <div class="final-item">
+            <label for="finalPriceInput">目标到手价：</label>
+            <input type="number" id="finalPriceInput" placeholder="输入期望价格" oninput="calculateDiscount()">
+        </div>
+        <div class="final-item">
+            <label>差额计算结果：</label>
+            <span id="requiredCouponAmount">0</span>
+        </div>
+    </div>
+</div>
+</body>
+</html>
