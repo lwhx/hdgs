@@ -82,12 +82,23 @@
             font-weight: bold;
             color: red;
         }
-        /* 新增百分比样式 */
-        .percent-sign::after {
-            content: "%";
+        /* 百分比输入样式 */
+        .percent-container {
             position: relative;
-            left: -25px;
+            width: 100%;
+        }
+        .percent-container::after {
+            content: "%";
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
             color: #666;
+            font-size: 1.2em;
+            pointer-events: none;
+        }
+        #officialDiscount {
+            padding-right: 40px;
         }
     </style>
     <script>
@@ -95,8 +106,8 @@
             var price = parseFloat(document.getElementById("price").value);
             
             // 官方立减计算
-            var officialDiscountRate = parseFloat(document.getElementById("officialDiscount").value) / 100;
-            var officialTotalDiscount = price * officialDiscountRate;
+            var officialDiscount = parseFloat(document.getElementById("officialDiscount").value) / 100;
+            var officialTotalDiscount = price * officialDiscount;
 
             // 店铺满减计算
             var storeStep = parseFloat(document.getElementById("storeStep").value);
@@ -154,42 +165,45 @@
 <div class="container">
     <h1 class="title">商品活动价格公式表</h1>
     
-    <!-- 修改后的优惠条件容器 -->
+    <!-- 满减配置区 -->
     <div class="discount-container">
         <div class="discount-item">
             <label>官方立减比例：</label>
-            <div class="percent-sign">
-                <input type="number" id="officialDiscount" value="15" 
+            <div class="percent-container">
+                <input type="number" id="officialDiscount" 
                        min="0" max="100" 
                        oninput="calculateDiscount()">
             </div>
         </div>
         <div class="discount-item">
             <label for="storeStep">店铺满减条件：</label>
-            <input type="number" id="storeStep" value="1000" oninput="calculateDiscount()">
+            <input type="number" id="storeStep" oninput="calculateDiscount()">
         </div>
         <div class="discount-item">
             <label for="storeDiscount">店铺满减金额：</label>
-            <input type="number" id="storeDiscount" value="100" oninput="calculateDiscount()">
+            <input type="number" id="storeDiscount" oninput="calculateDiscount()">
         </div>
         <div class="discount-item">
             <button onclick="saveConfig()">保存配置</button>
         </div>
     </div>
 
-    <!-- 结果展示容器保持不变 -->
+    <!-- 计算结果区 -->
     <div class="result-container">
         <div class="result-item">
             <label for="price" class="highlight">商品价格：</label>
-            <input type="number" id="price" placeholder="请输入商品价格" oninput="resetFinalPrice()" class="highlight">
+            <input type="number" id="price" 
+                   placeholder="请输入商品价格" 
+                   oninput="resetFinalPrice()" 
+                   class="highlight">
         </div>
         <div class="result-item">
             <label>官方立减总额：</label>
-            <span id="officialTotalDiscount">0</span>
+            <span id="officialTotalDiscount">0.00</span>
         </div>
         <div class="result-item">
             <label>店铺满减总额：</label>
-            <span id="storeTotalDiscount">0</span>
+            <span id="storeTotalDiscount">0.00</span>
         </div>
         <div class="result-item">
             <label for="totalDiscount">总优惠金额：</label>
@@ -197,7 +211,9 @@
         </div>
         <div class="result-item">
             <label for="finalPrice" class="highlight">实时到手价：</label>
-            <input type="text" id="finalPrice" readonly class="highlight">
+            <input type="text" id="finalPrice" 
+                   readonly 
+                   class="highlight">
         </div>
         <div class="result-item">
             <label for="discountRate">折扣率：</label>
@@ -205,15 +221,17 @@
         </div>
     </div>
 
-    <!-- 目标价格容器 -->
+    <!-- 目标价格区 -->
     <div class="final-container">
         <div class="final-item">
             <label for="finalPriceInput">目标到手价：</label>
-            <input type="number" id="finalPriceInput" placeholder="输入到手价格" oninput="calculateDiscount()">
+            <input type="number" id="finalPriceInput" 
+                   placeholder="输入到手价格" 
+                   oninput="calculateDiscount()">
         </div>
         <div class="final-item">
             <label>差额计算结果：</label>
-            <span id="requiredCouponAmount">0</span>
+            <span id="requiredCouponAmount">0.00</span>
         </div>
     </div>
 </div>
