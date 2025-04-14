@@ -155,7 +155,7 @@
         function loadConfig() {
             document.getElementById("officialDiscount").value = localStorage.getItem("officialDiscount") || "15";
             document.getElementById("storeStep").value = localStorage.getItem("storeStep") || "1000";
-            document.getElementById("storeDiscount").value = localStorage.getItem("storeDiscount") || "50";
+            document.getElementById("storeDiscount").value = localStorage.getItem("storeDiscount") || "100";
             calculateDiscount();
         }
         window.onload = loadConfig;
