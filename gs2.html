@@ -14,7 +14,7 @@
             align-items: flex-start;
             height: 100vh;
         }
-        .container {
+        。container {
             width: 80%;
             background-color: white;
             border-radius: 10px;
@@ -23,7 +23,7 @@
             box-sizing: border-box;
             margin-top: 20px;
         }
-        .title {
+        。title {
             text-align: center;
             padding: 20px;
             background-color: #4CAF50;
@@ -31,7 +31,7 @@
             border-radius: 10px 10px 0 0;
             margin: -20px -20px 20px -20px;
         }
-        .discount-container, .result-container, .final-container {
+        。discount-container, .result-container, .final-container {
             display: flex;
             justify-content: space-between;
             margin-bottom: 20px;
@@ -155,7 +155,7 @@
         function loadConfig() {
             document.getElementById("officialDiscount").value = localStorage.getItem("officialDiscount") || "15";
             document.getElementById("storeStep").value = localStorage.getItem("storeStep") || "1000";
-            document.getElementById("storeDiscount").value = localStorage.getItem("storeDiscount") || "100";
+            document.getElementById("storeDiscount").value = localStorage.getItem("storeDiscount") || "50";
             calculateDiscount();
         }
         window.onload = loadConfig;
