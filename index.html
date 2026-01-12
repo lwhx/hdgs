@@ -97,9 +97,24 @@
             cursor: pointer;
             font-size: 1.2em;
         }
+        .discount-item button:hover {
+            background-color: #45a049;
+        }
+        .discount-item button.reset-btn {
+            background-color: #f44336;
+            margin-top: 5px;
+            font-size: 0.9em;
+            padding: 8px;
+        }
+        .discount-item button.reset-btn:hover {
+            background-color: #da190b;
+        }
         label {
             margin-top: 10px;
+            margin-bottom: 5px;
             font-weight: bold;
+            height: 20px;
+            line-height: 20px;
         }
         input[type="number"], input[type="text"] {
             width: 100%;
@@ -110,16 +125,25 @@
             box-sizing: border-box;
             font-size: 1.2em;
             font-weight: bold;
+            height: 50px;
+        }
+        input[readonly] {
+            background-color: #f5f5f5;
+            color: #666;
         }
         span {
             display: block;
             padding: 10px;
+            margin-top: 5px;
             background-color: #f9f9f9;
             border: 1px solid #ddd;
             border-radius: 5px;
             text-align: center;
             font-size: 1.2em;
             font-weight: bold;
+            box-sizing: border-box;
+            height: 50px;
+            line-height: 28px;
         }
         .highlight {
             font-weight: bold;
@@ -142,13 +166,32 @@
         input[type="number"].percent-input {
             padding-right: 40px;
         }
+        /* Toast 提示样式 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 1000;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1 class="title">商品活动价格公式表</h1>
-    
+
     <div class="tabs">
         <button class="tab-button active" onclick="switchTab(event, 'percentage')">立减公式</button>
         <button class="tab-button" onclick="switchTab(event, 'fullReduction')">满减公式</button>
@@ -173,6 +216,7 @@
             </div>
             <div class="discount-item">
                 <button onclick="saveConfig('percentage')">保存配置</button>
+                <button class="reset-btn" onclick="resetConfig('percentage')">重置</button>
             </div>
         </div>
         <div class="result-container">
@@ -187,6 +231,10 @@
             <div class="final-item"><label for="finalPriceInput_pct">目标到手价：</label><input type="number" id="finalPriceInput_pct" placeholder="请输入目标到手价格" min="0" step="0.01" oninput="calculatePercentage()"></div>
             <div class="final-item"><label>做优惠金额：</label><span id="requiredCouponAmount_pct">0</span></div>
         </div>
+        <div class="final-container">
+            <div class="final-item"><label for="reverseTarget_pct">反推到手价：</label><input type="number" id="reverseTarget_pct" placeholder="输入到手价反推" min="0" step="0.01" oninput="reverseCalculate('percentage')"></div>
+            <div class="final-item"><label>推算商品价：</label><span id="reversePrice_pct">-</span></div>
+        </div>
     </div>
 
     <!-- ===== 满减公式内容 ===== -->
@@ -196,7 +244,10 @@
             <div class="discount-item"><label for="officialDiscount_fr">官方满减金额：</label><input type="number" id="officialDiscount_fr" oninput="calculateFullReduction()"></div>
             <div class="discount-item"><label for="storeStep_fr">店铺满减条件：</label><input type="number" id="storeStep_fr" oninput="calculateFullReduction()"></div>
             <div class="discount-item"><label for="storeDiscount_fr">店铺满减金额：</label><input type="number" id="storeDiscount_fr" oninput="calculateFullReduction()"></div>
-            <div class="discount-item"><button onclick="saveConfig('fullReduction')">保存配置</button></div>
+            <div class="discount-item">
+                <button onclick="saveConfig('fullReduction')">保存配置</button>
+                <button class="reset-btn" onclick="resetConfig('fullReduction')">重置</button>
+            </div>
         </div>
         <div class="result-container">
             <div class="result-item"><label for="price_fr" class="highlight">商品价格：</label><input type="number" id="price_fr" placeholder="请输入商品价格" oninput="resetFinalPrice('fullReduction')" class="highlight"></div>
@@ -210,10 +261,50 @@
             <div class="final-item"><label for="finalPriceInput_fr">最终到手价：</label><input type="number" id="finalPriceInput_fr" placeholder="请输入最终到手价" oninput="calculateFullReduction()"></div>
             <div class="final-item"><label>做优惠金额：</label><span id="requiredCouponAmount_fr">0</span></div>
         </div>
+        <div class="final-container">
+            <div class="final-item"><label for="reverseTarget_fr">反推到手价：</label><input type="number" id="reverseTarget_fr" placeholder="输入到手价反推" min="0" step="0.01" oninput="reverseCalculate('fullReduction')"></div>
+            <div class="final-item"><label>推算商品价：</label><span id="reversePrice_fr">-</span></div>
+        </div>
     </div>
 </div>
 
+<!-- Toast 提示元素 -->
+<div id="toast" class="toast">配置已保存</div>
+
 <script>
+    // 常量定义
+    const MAX_STORE_TIMES = 10; // 店铺满减最大倍数
+
+    // 默认配置
+    const DEFAULT_CONFIG = {
+        percentage: {
+            officialDiscount: 15,
+            storeStep: 1000,
+            storeDiscount: 50
+        },
+        fullReduction: {
+            officialStep: 300,
+            officialDiscount: 30,
+            storeStep: 1000,
+            storeDiscount: 50
+        }
+    };
+
+    // 存储key映射
+    const STORAGE_KEYS = {
+        percentage: {
+            officialDiscount: "officialDiscount_pct",
+            storeStep: "storeStep_pct",
+            storeDiscount: "storeDiscount_pct"
+        },
+        fullReduction: {
+            officialStep: "officialStep_fr",
+            officialDiscount: "officialDiscount_fr",
+            storeStep: "storeStep_fr",
+            storeDiscount: "storeDiscount_fr"
+        }
+    };
+
     // ===== 立减公式逻辑 =====
     function calculatePercentage() {
         const price = parseFloat(document.getElementById("price_pct").value) || 0;
@@ -222,12 +313,16 @@
         const storeDiscount = parseFloat(document.getElementById("storeDiscount_pct").value) || 0;
         const finalPriceInput = parseFloat(document.getElementById("finalPriceInput_pct").value);
 
+        // 官方立减总额 = 价格 × 立减比例
         const officialTotalDiscount = price * officialDiscountRate;
-        const storeTimes = Math.min(Math.floor(price / storeStep), 10);
+
+        // 店铺满减总额 = 店铺满减倍数 × 单次满减金额（最多10倍）
+        const storeTimes = storeStep > 0 ? Math.min(Math.floor(price / storeStep), MAX_STORE_TIMES) : 0;
         const storeTotalDiscount = storeTimes * storeDiscount;
+
         const totalDiscount = officialTotalDiscount + storeTotalDiscount;
         const finalPrice = price - totalDiscount;
-        const discountRate = (finalPrice / price) || 0;
+        const discountRate = price > 0 ? (finalPrice / price) : 0;
 
         let displayText = "0";
         if (!isNaN(finalPriceInput) && finalPriceInput >= 0) {
@@ -246,54 +341,52 @@
         document.getElementById("finalPrice_pct").value = finalPrice.toFixed(2);
         document.getElementById("discountRate_pct").value = discountRate.toFixed(2);
         document.getElementById("requiredCouponAmount_pct").innerText = displayText;
+
+        // 同时更新反推结果
+        reverseCalculate('percentage');
     }
 
     // ===== 满减公式逻辑 =====
     function calculateFullReduction() {
-        const price = parseFloat(document.getElementById("price_fr").value);
-        const officialStep = parseFloat(document.getElementById("officialStep_fr").value);
-        const officialDiscount = parseFloat(document.getElementById("officialDiscount_fr").value);
-        const storeStep = parseFloat(document.getElementById("storeStep_fr").value);
-        const storeDiscount = parseFloat(document.getElementById("storeDiscount_fr").value);
+        const price = parseFloat(document.getElementById("price_fr").value) || 0;
+        const officialStep = parseFloat(document.getElementById("officialStep_fr").value) || 0;
+        const officialDiscount = parseFloat(document.getElementById("officialDiscount_fr").value) || 0;
+        const storeStep = parseFloat(document.getElementById("storeStep_fr").value) || 0;
+        const storeDiscount = parseFloat(document.getElementById("storeDiscount_fr").value) || 0;
         const finalPriceInput = parseFloat(document.getElementById("finalPriceInput_fr").value);
 
-        let isValid = !isNaN(price) && !isNaN(officialStep) && !isNaN(officialDiscount) && !isNaN(storeStep) && !isNaN(storeDiscount);
-
-        if (!isValid) {
-            document.getElementById("officialTotalDiscount_fr").innerText = "0";
-            document.getElementById("storeTotalDiscount_fr").innerText = "0";
-            document.getElementById("totalDiscount_fr").value = "0";
-            document.getElementById("finalPrice_fr").value = "0";
-            document.getElementById("discountRate_fr").value = "0";
-            document.getElementById("requiredCouponAmount_fr").innerText = "0";
-            return;
-        }
-
-        const officialTimes = Math.floor(price / officialStep);
-        const storeTimes = Math.min(Math.floor(price / storeStep), 10);
+        // 官方满减总额
+        const officialTimes = officialStep > 0 ? Math.floor(price / officialStep) : 0;
         const officialTotalDiscount = officialTimes * officialDiscount;
+
+        // 店铺满减总额（最多10倍）
+        const storeTimes = storeStep > 0 ? Math.min(Math.floor(price / storeStep), MAX_STORE_TIMES) : 0;
         const storeTotalDiscount = storeTimes * storeDiscount;
+
         const totalDiscount = officialTotalDiscount + storeTotalDiscount;
         const finalPrice = price - totalDiscount;
-        const discountRate = (finalPrice / price).toFixed(2);
+        const discountRate = price > 0 ? (finalPrice / price) : 0;
 
         let displayText = "0";
         if (!isNaN(finalPriceInput) && finalPriceInput >= 0) {
             if (finalPriceInput < finalPrice) {
                 const requiredCouponAmount = price - officialTotalDiscount - finalPriceInput;
                 displayText = "做优惠金额: " + requiredCouponAmount.toFixed(2);
-            } else {
+            } else if (finalPriceInput > finalPrice) {
                 const diffAmount = finalPriceInput - finalPrice;
                 displayText = "补差价: " + diffAmount.toFixed(2);
             }
         }
 
-        document.getElementById("officialTotalDiscount_fr").innerText = officialTotalDiscount;
-        document.getElementById("storeTotalDiscount_fr").innerText = storeTotalDiscount;
-        document.getElementById("totalDiscount_fr").value = totalDiscount;
+        document.getElementById("officialTotalDiscount_fr").innerText = officialTotalDiscount.toFixed(2);
+        document.getElementById("storeTotalDiscount_fr").innerText = storeTotalDiscount.toFixed(2);
+        document.getElementById("totalDiscount_fr").value = totalDiscount.toFixed(2);
         document.getElementById("finalPrice_fr").value = finalPrice.toFixed(2);
-        document.getElementById("discountRate_fr").value = discountRate;
+        document.getElementById("discountRate_fr").value = discountRate.toFixed(2);
         document.getElementById("requiredCouponAmount_fr").innerText = displayText;
+
+        // 同时更新反推结果
+        reverseCalculate('fullReduction');
     }
 
     // ===== 通用功能函数 =====
@@ -321,34 +414,166 @@
         }
     }
 
-    function saveConfig(type) {
+    // 反推商品价格
+    function reverseCalculate(type) {
+        const suffix = type === 'percentage' ? '_pct' : '_fr';
+        const targetPrice = parseFloat(document.getElementById("reverseTarget" + suffix).value);
+
+        const outputElem = document.getElementById("reversePrice" + suffix);
+
+        if (isNaN(targetPrice) || targetPrice <= 0) {
+            outputElem.innerText = "-";
+            return;
+        }
+
+        let result = "";
+
         if (type === 'percentage') {
-            localStorage.setItem("officialDiscount_pct", document.getElementById("officialDiscount_pct").value);
-            localStorage.setItem("storeStep_pct", document.getElementById("storeStep_pct").value);
-            localStorage.setItem("storeDiscount_pct", document.getElementById("storeDiscount_pct").value);
+            // 立减公式反推
+            const officialDiscountRate = parseFloat(document.getElementById("officialDiscount_pct").value) / 100 || 0;
+            const storeStep = parseFloat(document.getElementById("storeStep_pct").value) || 0;
+            const storeDiscount = parseFloat(document.getElementById("storeDiscount_pct").value) || 0;
+
+            if (officialDiscountRate >= 1) {
+                outputElem.innerText = "折扣率过大";
+                return;
+            }
+
+            // 立减公式：到手价 = 价格 × (1 - 官方折扣率) - 店铺满减
+            // 价格 = (到手价 + 店铺满减) / (1 - 官方折扣率)
+
+            let minPrice = Infinity;
+
+            if (storeStep > 0 && storeDiscount > 0) {
+                // 遍历可能的店铺满减倍数 (0-10)，找最低价格
+                for (let storeTimes = 0; storeTimes <= MAX_STORE_TIMES; storeTimes++) {
+                    const storeDiscountAmt = storeTimes * storeDiscount;
+                    const calcPrice = (targetPrice + storeDiscountAmt) / (1 - officialDiscountRate);
+
+                    // 验证这个价格是否对应正确的满减倍数
+                    const expectedStoreTimes = Math.min(Math.floor(calcPrice / storeStep), MAX_STORE_TIMES);
+                    if (expectedStoreTimes === storeTimes) {
+                        // 有效解，取阶梯最低价格
+                        const lowerBound = storeTimes * storeStep;
+                        const validPrice = Math.max(lowerBound, calcPrice);
+                        if (validPrice < minPrice) minPrice = validPrice;
+                    }
+                }
+
+                result = minPrice !== Infinity ? minPrice.toFixed(2) : "无解";
+            } else {
+                // 没有店铺满减，直接计算
+                const calcPrice = targetPrice / (1 - officialDiscountRate);
+                result = calcPrice.toFixed(2);
+            }
+
+            outputElem.innerText = result;
         } else {
-            localStorage.setItem("officialStep_fr", document.getElementById("officialStep_fr").value);
-            localStorage.setItem("officialDiscount_fr", document.getElementById("officialDiscount_fr").value);
-            localStorage.setItem("storeStep_fr", document.getElementById("storeStep_fr").value);
-            localStorage.setItem("storeDiscount_fr", document.getElementById("storeDiscount_fr").value);
+            // 满减公式反推
+            const officialStep = parseFloat(document.getElementById("officialStep_fr").value) || 0;
+            const officialDiscount = parseFloat(document.getElementById("officialDiscount_fr").value) || 0;
+            const storeStep = parseFloat(document.getElementById("storeStep_fr").value) || 0;
+            const storeDiscount = parseFloat(document.getElementById("storeDiscount_fr").value) || 0;
+
+            if (officialStep <= 0 && storeStep <= 0) {
+                outputElem.innerText = "请设置满减条件";
+                return;
+            }
+
+            let minPrice = Infinity;
+
+            // 遍历可能的官方满减倍数 (0-20)
+            for (let officialTimes = 0; officialTimes <= 20; officialTimes++) {
+                const officialDiscountAmt = officialTimes * officialDiscount;
+
+                // 遍历可能的店铺满减倍数 (0-10)
+                for (let storeTimes = 0; storeTimes <= MAX_STORE_TIMES; storeTimes++) {
+                    const storeDiscountAmt = storeTimes * storeDiscount;
+
+                    // 到手价 = 价格 - 官方满减 - 店铺满减
+                    // 价格 = 到手价 + 官方满减 + 店铺满减
+                    const calcPrice = targetPrice + officialDiscountAmt + storeDiscountAmt;
+
+                    // 验证这个价格是否对应正确的满减倍数
+                    const expectedOfficialTimes = officialStep > 0 ? Math.floor(calcPrice / officialStep) : 0;
+                    const expectedStoreTimes = storeStep > 0 ? Math.min(Math.floor(calcPrice / storeStep), MAX_STORE_TIMES) : 0;
+
+                    if (expectedOfficialTimes === officialTimes && expectedStoreTimes === storeTimes) {
+                        // 找到有效解，取阶梯最低价格
+                        let lowerBound = 0;
+                        if (officialStep > 0) lowerBound = Math.max(lowerBound, officialTimes * officialStep);
+                        if (storeStep > 0) lowerBound = Math.max(lowerBound, storeTimes * storeStep);
+                        const validPrice = Math.max(lowerBound, calcPrice);
+                        if (validPrice < minPrice) minPrice = validPrice;
+                    }
+                }
+            }
+
+            result = minPrice !== Infinity ? minPrice.toFixed(2) : "无解";
+
+            outputElem.innerText = result;
         }
     }
 
-    function loadConfig(type) {
+    // 保存配置
+    function saveConfig(type) {
+        const keys = STORAGE_KEYS[type];
+        for (const [field, storageKey] of Object.entries(keys)) {
+            const elementId = storageKey;
+            const value = document.getElementById(elementId).value;
+            localStorage.setItem(storageKey, value);
+        }
+        showToast("配置已保存");
+    }
+
+    // 重置配置
+    function resetConfig(type) {
+        const defaults = DEFAULT_CONFIG[type];
+        const keys = STORAGE_KEYS[type];
+
+        for (const [field, storageKey] of Object.entries(keys)) {
+            const defaultValue = defaults[field];
+            document.getElementById(storageKey).value = defaultValue;
+            localStorage.removeItem(storageKey);
+        }
+
         if (type === 'percentage') {
-            document.getElementById("officialDiscount_pct").value = localStorage.getItem("officialDiscount_pct") || "15";
-            document.getElementById("storeStep_pct").value = localStorage.getItem("storeStep_pct") || "1000";
-            document.getElementById("storeDiscount_pct").value = localStorage.getItem("storeDiscount_pct") || "50";
             calculatePercentage();
         } else {
-            document.getElementById("officialStep_fr").value = localStorage.getItem("officialStep_fr") || "300";
-            document.getElementById("officialDiscount_fr").value = localStorage.getItem("officialDiscount_fr") || "30";
-            document.getElementById("storeStep_fr").value = localStorage.getItem("storeStep_fr") || "1000";
-            document.getElementById("storeDiscount_fr").value = localStorage.getItem("storeDiscount_fr") || "50";
+            calculateFullReduction();
+        }
+        showToast("已重置为默认值");
+    }
+
+    // 加载配置
+    function loadConfig(type) {
+        const keys = STORAGE_KEYS[type];
+        const defaults = DEFAULT_CONFIG[type];
+
+        for (const [field, storageKey] of Object.entries(keys)) {
+            const savedValue = localStorage.getItem(storageKey);
+            const value = savedValue !== null ? savedValue : defaults[field];
+            document.getElementById(storageKey).value = value;
+        }
+
+        if (type === 'percentage') {
+            calculatePercentage();
+        } else {
             calculateFullReduction();
         }
     }
 
+    // Toast 提示
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.innerText = message;
+        toast.classList.add("show");
+        setTimeout(function() {
+            toast.classList.remove("show");
+        }, 2000);
+    }
+
+    // 页面加载时初始化
     window.onload = function() {
         loadConfig('percentage');
         loadConfig('fullReduction');
