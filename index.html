@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>商品活动价格公式表</title>
     <style>
         body {
@@ -184,6 +185,92 @@
         .toast.show {
             opacity: 1;
             transform: translateY(0);
+        }
+
+        /* 手机自适应 */
+        @media (max-width: 768px) {
+            body {
+                height: auto;
+                padding: 5px 0;
+            }
+            .container {
+                width: 98%;
+                margin-top: 5px;
+            }
+            .title {
+                font-size: 1.1em;
+                padding: 10px;
+            }
+            .tab-button {
+                font-size: 0.85em;
+                padding: 8px 5px;
+            }
+            .tab-content {
+                padding: 8px;
+            }
+            .discount-container, .result-container, .final-container {
+                flex-wrap: wrap;
+                margin-bottom: 8px;
+            }
+            .discount-item, .result-item, .final-item {
+                min-width: 48%;
+                margin: 3px 4px;
+            }
+            label {
+                font-size: 0.85em;
+                height: auto;
+                margin-top: 5px;
+                margin-bottom: 3px;
+            }
+            input[type="number"], input[type="text"], span {
+                font-size: 0.95em;
+                height: 40px;
+                padding: 6px;
+                margin-top: 3px;
+            }
+            span {
+                line-height: 26px;
+            }
+            .discount-item button {
+                font-size: 0.9em;
+                padding: 6px;
+                margin-top: 5px;
+            }
+            /* 6列布局改为2列 */
+            .result-container .result-item,
+            .final-container .final-item {
+                width: 48%;
+            }
+        }
+        @media (max-width: 480px) {
+            body {
+                padding: 0;
+            }
+            .container {
+                width: 100%;
+                border-radius: 0;
+            }
+            .title {
+                padding: 8px;
+                font-size: 1em;
+            }
+            .tab-content {
+                padding: 5px;
+            }
+            .discount-container, .result-container, .final-container {
+                margin-bottom: 5px;
+            }
+            .discount-item, .result-item, .final-item {
+                min-width: 100%;
+                margin: 3px 0;
+            }
+            label {
+                font-size: 0.8em;
+            }
+            input[type="number"], input[type="text"], span {
+                height: 38px;
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
